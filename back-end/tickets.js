@@ -39,12 +39,19 @@ const Ticket = mongoose.model('Ticket', ticketSchema);
 
 // get tickets -- will list tickets that a user has submitted
 router.get('/', validUser, async (req, res) => {
+    let tickets = [];
   try {
-    let tickets = await Ticket.find({
-      user: req.user
-    }).sort({
-      created: -1
-    });
+    if (req.user.role === "admin") {
+      tickets = await Ticket.find().sort({
+        created: -1
+      });
+    } else {
+      tickets = await Ticket.find({
+        user: req.user
+      }).sort({
+        created: -1
+      });
+    }
     return res.send({
       tickets: tickets
     });
@@ -61,6 +68,33 @@ router.post('/', validUser, async (req, res) => {
       problem: req.body.problem,
     });
     try {
+      await ticket.save();
+      return res.send({
+        ticket: ticket
+      });
+    } catch (error) {
+      console.log(error);
+      return res.sendStatus(500);
+    }
+  });
+  
+// edit a ticket -- only edits status and response
+router.put('/:id', validUser, async (req, res) => {
+    // can only do this if an administrator
+    if (req.user.role !== "admin") {
+      return res.sendStatus(403);
+    }
+    if (!req.body.status || !req.body.response) {
+      return res.status(400).send({
+        message: "status and response are required"
+      });
+    }
+    try {
+      ticket = await Ticket.findOne({
+        _id: req.params.id
+      });
+      ticket.status = req.body.status;
+      ticket.response = req.body.response;
       await ticket.save();
       return res.send({
         ticket: ticket
