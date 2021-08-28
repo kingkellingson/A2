@@ -203,6 +203,17 @@ router.get('/', validUser, async (req, res) => {
     }
   });
 
+// logout
+router.delete("/", validUser, async (req, res) => {
+    try {
+      req.session = null;
+      res.sendStatus(200);
+    } catch (error) {
+      console.log(error);
+      return res.sendStatus(500);
+    }
+  });
+
   
 module.exports = {
   routes: router,
